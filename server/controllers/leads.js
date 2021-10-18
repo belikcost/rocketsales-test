@@ -17,8 +17,13 @@ const getContactInfo = (accessToken, id) => {
         .then(response => response.json());
 }
 
-const getLeadsFetch = (accessToken) => {
-    return withAccessToken(accessToken, `${API_URL}/api/v4/leads?with=contacts`)
+const getLeadsFetch = (accessToken, query) => {
+    let url = `${API_URL}/api/v4/leads?with=contacts`;
+    if (query) {
+        url += `&query=${query}`
+    }
+
+    return withAccessToken(accessToken, url)
         .then(response => response.json())
         .then(response => response._embedded.leads);
 }
@@ -31,7 +36,6 @@ const buildLeads = async (leads, accessToken) => {
         const pipelineId = lead.pipeline_id;
         const statusId = lead.status_id;
         const contacts = lead._embedded.contacts;
-        console.log(lead);
         const leadToResult = {
             id: lead.id,
             name: lead.name,
@@ -45,7 +49,6 @@ const buildLeads = async (leads, accessToken) => {
         });
 
         await getPipelineInfo(accessToken, pipelineId).then(pipelineInfo => {
-            console.log(pipelineInfo);
             const statuses = pipelineInfo._embedded.statuses;
 
             for (const { id, name, color } of statuses) {
@@ -81,10 +84,13 @@ const buildLeads = async (leads, accessToken) => {
 }
 
 module.exports = (req, res) => {
+    const { query } = req.params;
+    res.set('Access-Control-Allow-Origin', '*');
+
     getTokens(clientId, clientSecret, authCode)
         .then(response => response.access_token)
         .then(accessToken => {
-            getLeadsFetch(accessToken)
+            getLeadsFetch(accessToken, query)
                 .then(leads => buildLeads(leads, accessToken))
                 .then(leads => res.json(leads));
         });
