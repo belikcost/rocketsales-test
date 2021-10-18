@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start-server": "nodemon server/index.js",
+    "server": "nodemon server/index.js",
     "start": "webpack serve --mode development",
     "build": "webpack --mode production"
   },
