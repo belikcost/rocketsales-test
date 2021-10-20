@@ -1,9 +1,8 @@
 const express = require('express');
-const leads = require('./controllers/leads');
-
+const { getLeads } = require('./controllers');
 
 const router = new express.Router();
 
-router.get('/leads', leads);
+router.get('/leads', getLeads);
 
 module.exports = router;

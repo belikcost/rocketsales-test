@@ -1,32 +1,9 @@
-const getTokens = require('../utils/getTokens');
-const withAccessToken = require('../utils/withAccessToken');
-const { clientId, clientSecret, authCode, API_URL } = require("../config");
+const cache = require('memory-cache');
 
-const getPipelineInfo = (accessToken, id) => {
-    return withAccessToken(accessToken, `${API_URL}/api/v4/leads/pipelines/${id}`)
-        .then(response => response.json());
-}
+const { clientId, clientSecret, authCode } = require("../config");
+const { ApiError } = require("../validators/ApiErrors");
+const { getUserInfo, getPipelineInfo, getContactInfo, getTokens, getLeads } = require("../fetchs");
 
-const getUserInfo = (accessToken, id) => {
-    return withAccessToken(accessToken, `${API_URL}/api/v4/users/${id}`)
-        .then(response => response.json());
-}
-
-const getContactInfo = (accessToken, id) => {
-    return withAccessToken(accessToken, `${API_URL}/api/v4/contacts/${id}`)
-        .then(response => response.json());
-}
-
-const getLeadsFetch = (accessToken, query) => {
-    let url = `${API_URL}/api/v4/leads?with=contacts`;
-    if (query) {
-        url += `&query=${query}`
-    }
-
-    return withAccessToken(accessToken, url)
-        .then(response => response.json())
-        .then(response => response._embedded.leads);
-}
 
 const buildLeads = async (leads, accessToken) => {
     const result = [];
@@ -83,15 +60,34 @@ const buildLeads = async (leads, accessToken) => {
     return result;
 }
 
-module.exports = (req, res) => {
-    const { query } = req.params;
+module.exports = (req, res, next) => {
+    const { query } = req.query;
     res.set('Access-Control-Allow-Origin', '*');
 
-    getTokens(clientId, clientSecret, authCode)
-        .then(response => response.access_token)
-        .then(accessToken => {
-            getLeadsFetch(accessToken, query)
-                .then(leads => buildLeads(leads, accessToken))
-                .then(leads => res.json(leads));
+    let promiseWithAccessToken;
+    const accessToken = cache.get('accessToken');
+
+    if (accessToken) {
+        promiseWithAccessToken = new Promise(resolve => {
+            resolve(accessToken);
         });
+    } else {
+        promiseWithAccessToken = getTokens(clientId, clientSecret, authCode).then(response => response.access_token);
+        promiseWithAccessToken.then(accessToken => {
+            cache.put('accessToken', accessToken);
+        });
+    }
+
+    promiseWithAccessToken.then(accessToken => {
+        getLeads(accessToken, query)
+            .then(leads => buildLeads(leads, accessToken))
+            .then(leads => res.json(leads))
+            .catch(err => {
+                if (err instanceof ApiError) {
+                    err.sendResponse(res);
+                } else {
+                    next(err);
+                }
+            });
+    });
 }

@@ -15,6 +15,6 @@ module.exports = (clientId, clientSecret, authCode) => {
             code: authCode,
             redirect_uri: `https://test-belikcost.website.yandexcloud.net`
         })
-    })
-        .then(response => response.json())
+    }).then(response => response.json())
+
 }
