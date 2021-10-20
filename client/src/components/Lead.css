@@ -1,0 +1,11 @@
+.lead__contacts {
+    display: flex;
+}
+
+.lead-contact {
+    margin-right: 10px;
+}
+
+.lead-contact_name {
+    margin-bottom: 4px;
+}

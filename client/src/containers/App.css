@@ -1,0 +1,18 @@
+.app__search {
+    margin-bottom: 30px;
+}
+
+.app_spinner {
+    margin: 0 auto;
+    display: block !important;
+}
+
+.app_box {
+    display: flex;
+    justify-content: center;
+}
+
+.app_paper {
+    text-align: center;
+    padding: 1rem;
+}

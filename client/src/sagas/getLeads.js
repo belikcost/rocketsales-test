@@ -1,16 +1,32 @@
 import { takeEvery, call, put } from 'redux-saga/effects';
 
 import { API_URL, GET_LEADS_REQUEST } from "../constants";
-import { getLeadsSuccess } from "../redux/actions";
+import { getLeadsFail, getLeadsSuccess } from "../redux/actions";
 
 
-const getLeadsFetch = (data) => {
-    return fetch(`${API_URL}/leads`).then(res => res.json());
+const getLeadsFetch = (searchString) => {
+    let url = `${API_URL}/leads`;
+
+    if (searchString !== undefined) {
+        url += `?query=${searchString}`
+    }
+
+    return fetch(url).then(response => {
+        if (response.status !== 200) {
+            throw new Error;
+        } else {
+            return response.json();
+        }
+    });
 }
 
 function* getLeads(action) {
-    const result = yield call(getLeadsFetch, action.payload);
-    yield put(getLeadsSuccess(result));
+    try {
+        const result = yield call(getLeadsFetch, action.payload);
+        yield put(getLeadsSuccess(result));
+    } catch (e) {
+        yield put(getLeadsFail(e));
+    }
 }
 
 export default function* getLeadsWatcher() {
